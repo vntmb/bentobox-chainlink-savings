@@ -16,7 +16,7 @@
 
 // Version 22-Mar-2021
 
-pragma solidity 0.6.12;
+pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
 // solhint-disable avoid-low-level-calls

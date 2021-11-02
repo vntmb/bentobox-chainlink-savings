@@ -2,7 +2,7 @@
 
 pragma solidity >=0.5.0;
 
-import "@sushiswap/core/contracts/uniswapv2/interfaces/IUniswapV2Pair.sol";
+import "../interfaces/IUniswapV2Pair.sol";
 
 import "./SafeMath.sol";
 
