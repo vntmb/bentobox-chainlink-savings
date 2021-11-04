@@ -1,0 +1,13 @@
+# node modules
+node_modules/
+packages/hardhat/node_modules/
+packages/react-app/node_modules/
+packages/subgraph/node_modules/
+
+# deployment artifacts
+packages/hardhat/artifacts/
+packages/hardhat/cache/
+packages/hardhat/deployments/
+packages/subgraph/abis/
+packages/subgraph/config/
+packages/react-app/src/contracts/
