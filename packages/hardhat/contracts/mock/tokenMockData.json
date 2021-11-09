@@ -1,49 +1,51 @@
 {
-    "1": {
-        "name": "Wrapped Fantom",
-        "symbol": "wFTM",
-        "supply": 3852642,
-        "price": 0.756,
-        "decimals": 18,
-        "address_on_testnet": "0xf1277d1ed8ad466beddf92ef448a132661956621"
-    },
-    "2": {
-        "name": "Staked FTM",
-        "symbol": "sFTM",
-        "supply":  40110111,
-        "price": 0.756,
-        "decimals": 18,
-        "address_on_testnet": "0x3b28f151899bd945ac1559a3540b5741c7d2bd55"
-    },
-    "3": {
-        "name": "Fantom fUSD",
-        "symbol": "fUSD",
-        "supply": 171238,
-        "price": 1.00,
-        "decimals": 18,
-        "address_on_testnet": "0x91ea991bd52ee3c40eda2509701d905e1ee54074"
-    },
-    "4": {
-        "name": "Fantom Synthetic LINK",
-        "symbol": "fLINK",
-        "supply": 857318121,
-        "price": 0.0,
-        "decimals": 18,
-        "address_on_testnet": "0x91ea991bd52ee3c40eda2509701d905e1ee54074"
-    },
-    "5": {
-        "name": "Fantom Synthetic ETH",
-        "symbol": "fETH",
-        "supply":  1401,
-        "price": 1616.150000,
-        "decimals": 18,
-        "address_on_testnet": "0x8e5cac3c48cde3efe0a5b01066435cc688f8b8f8"
-    },
-    "6": {
-        "name": "Fantom Synthetic BTC",
-        "symbol": "fBTC",
-        "supply": 1020,
-        "price": 49882.420000,
-        "address_on_testnet": "0x2eb4ee20d9816bd6810f69166dd046f09c7 37201"
-    }
+    "tokens": [
+        {
+            "name": "Wrapped Fantom",
+            "symbol": "wFTM",
+            "supply": 3852642,
+            "price": 0.756,
+            "decimals": 18,
+            "address_on_testnet": "0xf1277d1ed8ad466beddf92ef448a132661956621"
+        },
+        {
+            "name": "Staked FTM",
+            "symbol": "sFTM",
+            "supply": 40110111,
+            "price": 0.756,
+            "decimals": 18,
+            "address_on_testnet": "0x3b28f151899bd945ac1559a3540b5741c7d2bd55"
+        },
+        {
+            "name": "Fantom fUSD",
+            "symbol": "fUSD",
+            "supply": 171238,
+            "price": 1.00,
+            "decimals": 18,
+            "address_on_testnet": "0x91ea991bd52ee3c40eda2509701d905e1ee54074"
+        },
+        {
+            "name": "Fantom Synthetic LINK",
+            "symbol": "fLINK",
+            "supply": 857318121,
+            "price": 0.0,
+            "decimals": 18,
+            "address_on_testnet": "0x91ea991bd52ee3c40eda2509701d905e1ee54074"
+        },
+        {
+            "name": "Fantom Synthetic ETH",
+            "symbol": "fETH",
+            "supply": 1401,
+            "price": 1616.150000,
+            "decimals": 18,
+            "address_on_testnet": "0x8e5cac3c48cde3efe0a5b01066435cc688f8b8f8"
+        },
+        {
+            "name": "Fantom Synthetic BTC",
+            "symbol": "fBTC",
+            "supply": 1020,
+            "price": 49882.420000,
+            "address_on_testnet": "0x2eb4ee20d9816bd6810f69166dd046f09c737201"
+        }
+    ]
 }
