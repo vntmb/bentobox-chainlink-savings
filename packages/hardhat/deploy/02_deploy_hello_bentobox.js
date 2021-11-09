@@ -1,25 +1,57 @@
 // deploy/00_deploy_your_contract.js
 
-//const { ethers } = require("hardhat");
+const { ethers } = require("hardhat");
+const fs = require('fs');
+
+const getTokenData = (filePath) => {
+  try {
+    const jsonString = fs.readFileSync(filePath);
+    const data = JSON.parse(jsonString);
+    return data;
+  } catch (err) {
+    console.log(err);
+    return
+  }
+}
+
+const getBigNumber = (amount, decimals = 18) => {
+  return ethers.BigNumber.from(amount).mul(ethers.BigNumber.from(10).pow(decimals));
+}
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const ERC20 = await deploy("ERC20Mock", {
-    from: deployer,
-    args: ["Alpha Token", "ALT", 1 * 10 ** 6],
-    deterministicDeployment: false,
-  });
+  // Get token info into deploy script
+  const mockTokenData = getTokenData("./contracts/mock/tokenMockData.json");
+  const mockTokenDataLength = mockTokenData["tokens"].length;
 
+  // Deploy tokens and add keep references to the deployment
+  let tokensObject = {};
+  for (let i = 0; i < mockTokenDataLength; i++) {
+    var currentToken = mockTokenData["tokens"][i]
+    tokensObject[currentToken["symbol"]] = await deploy("ERC20Mock", {
+      from: deployer,
+      args: [
+        currentToken["name"],
+        currentToken["symbol"],
+        getBigNumber(currentToken["supply"])
+      ],
+      deterministicDeployment: false,
+    });
+  }
+
+  // Pass native token to bentobox 
+  var nativeToken = tokensObject["wFTM"]
   const { address } = await deploy("BentoBoxV1", {
     from: deployer,
-    args: [ERC20.address],
+    args: [nativeToken.address],
     deterministicDeployment: false,
   });
 
   console.log("BentoBoxV1 deployed at ", address);
 
+  // Deploy HelloBentoBox
   await deploy("HelloBentoBox", {
     // Learn more about args here: https://www.npmjs.com/package/hardhat-deploy#deploymentsdeploy
     from: deployer,
@@ -63,4 +95,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   });
   */
 };
-module.exports.tags = ["Greeter"];
+module.exports.tags = ["HelloBentoBox"];
