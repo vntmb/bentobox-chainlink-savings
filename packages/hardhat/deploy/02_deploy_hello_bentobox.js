@@ -2,6 +2,7 @@
 
 const { ethers } = require("hardhat");
 const fs = require('fs');
+const { ecsign } = require("ethereumjs-util");
 
 const getTokenData = (filePath) => {
   try {
@@ -26,7 +27,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const mockTokenData = getTokenData("./contracts/mock/tokenMockData.json");
   const mockTokenDataLength = mockTokenData["tokens"].length;
 
-  // Deploy tokens and add keep references to the deployment
+  // Deploy tokens and keep references to the deployment
   let tokensObject = {};
   for (let i = 0; i < mockTokenDataLength; i++) {
     var currentToken = mockTokenData["tokens"][i]
@@ -39,26 +40,57 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
       ],
       deterministicDeployment: false,
     });
+    console.log(`${currentToken['symbol']} address: `)
+    console.log(tokensObject[currentToken["symbol"]]['address'])
   }
 
   // Pass native token to bentobox 
   var nativeToken = tokensObject["wFTM"]
-  const { address } = await deploy("BentoBoxV1", {
+  var { address } = await deploy("BentoBoxV1", {
     from: deployer,
     args: [nativeToken.address],
     deterministicDeployment: false,
   });
 
+  // Transfer fBTC to localhost user
+  var fBTC = tokensObject["fBTC"]
+  const fBTCERC20Mock = await ethers.getContractFactory('ERC20Mock');
+  const fBTCContract = await fBTCERC20Mock.attach(fBTC.address, deployer)
+  await fBTCContract.transfer("0x11Fe47d9fC54BFCdE4f49970218C60605B7b5109", 1000000);
+
   console.log("BentoBoxV1 deployed at ", address);
 
   // Deploy HelloBentoBox
-  await deploy("HelloBentoBox", {
+  var helloBentoBox = await deploy("HelloBentoBox", {
     // Learn more about args here: https://www.npmjs.com/package/hardhat-deploy#deploymentsdeploy
     from: deployer,
     args: [address],
     log: true,
   });
+  console.log("HelloBentoBox deployed at ", helloBentoBox.address);
 
+  // Enabling helloBentoBox for approval without signed messages on bento
+  const BentoBoxV1 = await ethers.getContract("BentoBoxV1", deployer);
+  await BentoBoxV1.whitelistMasterContract(helloBentoBox.address, true);
+
+  console.log("helloBentoBox whitelisting enabled");
+
+  // deployer giving helloBentoBox contract right to transfer funds on its behalf
+  await whitelistBentoBox(
+    deployer, 
+    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", 
+    helloBentoBox, 
+    BentoBoxV1
+  );
+  console.log("deployer has given helloBentoBox proxy rights");
+  // await whitelistBentoBox(
+  //   "0x11Fe47d9fC54BFCdE4f49970218C60605B7b5109", 
+  //   "0xbff3671e5bd48f8b6d80af321530ae9ff947d19902de88c3dc39335e5fa5a9b5", 
+  //   helloBentoBox, 
+  //   BentoBoxV1
+  // );
+  // console.log("localuser has given helloBentoBox proxy rights");
+  
   /*
     // Getting a previously deployed contract
     const YourContract = await ethers.getContract("YourContract", deployer);
@@ -96,3 +128,113 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   */
 };
 module.exports.tags = ["HelloBentoBox"];
+
+async function whitelistBentoBox(userAddress, privateKey, helloBentoBox, BentoBoxV1) {
+  const nonce = await BentoBoxV1.nonces(userAddress);
+  const { v, r, s } = getSignedMasterContractApprovalData(
+    BentoBoxV1,
+    userAddress,
+    privateKey,
+    helloBentoBox.address,
+    true,
+    nonce
+  )
+  const HelloBentoBox = await ethers.getContract("HelloBentoBox", userAddress);
+  await HelloBentoBox.setBentoBoxApproval(
+    userAddress,
+    true,
+    v,
+    r,
+    s
+  );
+}
+
+
+function getSignedMasterContractApprovalData(
+  bentoBox,
+  user,
+  privateKey,
+  masterContractAddress,
+  approved,
+  nonce
+) {
+  const digest = getBentoBoxApprovalDigest(
+    bentoBox,
+    user,
+    masterContractAddress,
+    approved,
+    nonce,
+    31337
+  );
+  const { v, r, s } = ecsign(
+    Buffer.from(digest.slice(2), "hex"),
+    Buffer.from(privateKey.replace("0x", ""), "hex")
+  );
+  return { v, r, s };
+}
+
+
+function getBentoBoxApprovalDigest(
+  bentoBox,
+  user,
+  masterContractAddress,
+  approved,
+  nonce,
+  chainId = 1
+) {
+  const DOMAIN_SEPARATOR = getBentoBoxDomainSeparator(
+    bentoBox.address,
+    chainId
+  );
+  const msg = ethers.utils.defaultAbiCoder.encode(
+    ["bytes32", "bytes32", "address", "address", "bool", "uint256"],
+    [
+      BENTOBOX_MASTER_APPROVAL_TYPEHASH,
+      approved
+        ? ethers.utils.keccak256(
+            ethers.utils.toUtf8Bytes(
+              "Give FULL access to funds in (and approved to) BentoBox?"
+            )
+          )
+        : ethers.utils.keccak256(ethers.utils.toUtf8Bytes("Revoke access to BentoBox?")),
+      user,
+      masterContractAddress,
+      approved,
+      nonce,
+    ]
+  );
+  const pack = ethers.utils.solidityPack(
+    ["bytes1", "bytes1", "bytes32", "bytes32"],
+    ["0x19", "0x01", DOMAIN_SEPARATOR, ethers.utils.keccak256(msg)]
+  );
+  return ethers.utils.keccak256(pack);
+}
+
+function getBentoBoxDomainSeparator(address, chainId) {
+  return ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "bytes32", "uint256", "address"],
+      [
+        ethers.utils.keccak256(
+          ethers.utils.toUtf8Bytes(
+            "EIP712Domain(string name,uint256 chainId,address verifyingContract)"
+          )
+        ),
+        ethers.utils.keccak256(ethers.utils.toUtf8Bytes("BentoBox V1")),
+        chainId,
+        address,
+      ]
+    )
+  );
+}
+
+const BENTOBOX_MASTER_APPROVAL_TYPEHASH = ethers.utils.keccak256(
+  ethers.utils.toUtf8Bytes(
+    "SetMasterContractApproval(string warning,address user,address masterContract,bool approved,uint256 nonce)"
+  )
+);
+
+// TODO: create accounts with tokens in them
+//    - first try to use bento directly
+//    - then try to use helloBentoBox as a proxy
+// TODO: See how other contracts deal with bento deployments

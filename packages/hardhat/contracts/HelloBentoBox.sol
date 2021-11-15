@@ -10,6 +10,7 @@ contract HelloBentoBox is BoringBatchable {
         address user;
         address token;
         uint256 depositedShares;
+        uint256 amountDeposited;
     }
 
     IBentoBoxMinimal public immutable bentoBox;
@@ -69,7 +70,8 @@ contract HelloBentoBox is BoringBatchable {
         deposits[totalDeposits] = Deposits({
             user: msg.sender,
             token: token,
-            depositedShares: depositedShares
+            depositedShares: depositedShares,
+            amountDeposited: amount
         });
 
         totalDeposits += 1;

@@ -26,7 +26,7 @@ import externalContracts from "./contracts/external_contracts";
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor } from "./helpers";
 // import Hints from "./Hints";
-import { ExampleUI, Hints, Subgraph } from "./views";
+import { ExampleUI, Hints, Permissions, Subgraph } from "./views";
 
 const { ethers } = require("ethers");
 /*
@@ -535,7 +535,18 @@ function App(props) {
               Subgraph
             </Link>
           </Menu.Item>
+          <Menu.Item key="/permissions">
+            <Link
+              onClick={() => {
+                setRoute("/permissions");
+              }}
+              to="/permissions"
+            >
+              permissions
+            </Link>
+          </Menu.Item>
         </Menu>
+        
 
         <Switch>
           <Route exact path="/">
@@ -673,6 +684,15 @@ function App(props) {
               tx={tx}
               writeContracts={writeContracts}
               mainnetProvider={mainnetProvider}
+            />
+          </Route>
+          <Route path="/permissions">
+            <Permissions
+              address={address}
+              yourLocalBalance={yourLocalBalance}
+              localChainId={localChainId}
+              localProvider={localProvider}
+              userSigner={userSigner}
             />
           </Route>
         </Switch>
