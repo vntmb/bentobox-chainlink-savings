@@ -10,7 +10,7 @@ pragma experimental ABIEncoderV2;
 // Combining BoringBatchable with msg.value can cause double spending issues
 // https://www.paradigm.xyz/2021/08/two-rights-might-make-a-wrong/
 
-import "../interfaces/IERC20.sol";
+import "./IERC20.sol";
 
 contract BaseBoringBatchable {
     /// @dev Helper function to extract a useful revert message from a failed call.

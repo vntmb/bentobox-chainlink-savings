@@ -2,14 +2,15 @@
 
 pragma solidity >=0.8.0;
 
-import "./interfaces/IBentoBoxMinimal.sol";
-import "./utils/BoringBatchable.sol";
+import "./IBentoBoxMinimal.sol";
+import "./BoringBatchable.sol";
 
 contract HelloBentoBox is BoringBatchable {
     struct Deposits {
         address user;
         address token;
         uint256 depositedShares;
+        uint256 amount;
     }
 
     IBentoBoxMinimal public immutable bentoBox;
@@ -25,21 +26,16 @@ contract HelloBentoBox is BoringBatchable {
         bentoBox = _bentoBox;
         _bentoBox.registerProtocol();
     }
-
+    
+    // TODO: add vrs back in
     function setBentoBoxApproval(
         address user,
-        bool approved,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        bool approved
     ) external {
         bentoBox.setMasterContractApproval(
             user,
             address(this),
-            approved,
-            v,
-            r,
-            s
+            approved
         );
     }
 
@@ -69,7 +65,8 @@ contract HelloBentoBox is BoringBatchable {
         deposits[totalDeposits] = Deposits({
             user: msg.sender,
             token: token,
-            depositedShares: depositedShares
+            depositedShares: depositedShares,
+            amount: amount
         });
 
         totalDeposits += 1;

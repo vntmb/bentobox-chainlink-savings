@@ -74,13 +74,11 @@ interface IBentoBoxMinimal {
         address to,
         uint256 share
     ) external;
-
+    
+    // TODO: add vrs back in
     function setMasterContractApproval(
         address user,
         address masterContract,
-        bool approved,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        bool approved
     ) external;
 }
