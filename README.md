@@ -7,7 +7,7 @@ Deployed at (polygon mumbai):
 Depositing Money to HelloBentoBox from token:
   - when setting up contracts:
     - on BentoBoxV1 contract: whitelistMasterContract(helloBentoBox.address, true)
-  1. on ALPHA Token contract: approve(bento.address, <max transferable amount per transaction>)
+  1. on ALPHA Token contract: approve(bento.address, max transferable amount per transaction)
   2. on BentoBoxV1 contract: setMasterContractApproval(yourwallet.address, helloBentoBox.address, true)
   3. on HelloBentoBox contract: depositToHelloBentoBox(alphaToken.address, amount, false)
 
