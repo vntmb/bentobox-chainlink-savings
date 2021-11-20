@@ -170,7 +170,7 @@ interface IBentoBoxMinimal {
     ) external;
 }
 
-contract HelloBentoBox is BoringBatchable {
+contract VarietySavings is BoringBatchable {
     struct Deposits {
         address user;
         address token;
@@ -197,7 +197,7 @@ contract HelloBentoBox is BoringBatchable {
         bentoBox.setMasterContractApproval(user, address(this), approved);
     }
 
-    function depositToHelloBentoBox(
+    function depositToVarietySavings(
         address token,
         uint256 amount,
         bool fromBentoBox
@@ -230,7 +230,7 @@ contract HelloBentoBox is BoringBatchable {
         totalDeposits += 1;
     }
 
-    function withdrawFromHelloBentoBox(
+    function withdrawFromVarietySavings(
         uint256 depositId,
         uint256 amount,
         bool toBentoBox
