@@ -16,8 +16,13 @@ contract VarietySavingsDAO {
 
     VotingRound public votingRound;
 
+    modifier onlyEligible() {
+        require(addressVotingEligibity[msg.sender], 'You are not eligible to vote');
+        _;
+    }
+
     // TODO: make sure user can only vote once
-    function voteForTokens(address[] memory _chosenTokens) public {
+    function voteForTokens(address[] memory _chosenTokens) public onlyEligible {
         uint8 numberOfVotedTokens = uint8(_chosenTokens.length);
         for (uint8 i = 0; i < numberOfVotedTokens; i++) {
             address currentToken = _chosenTokens[i];
