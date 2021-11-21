@@ -61,6 +61,7 @@ contract VarietySavingsDAO {
     // TODO: use safe transfer
     function distributeTokens(address user) private {
         uint8 numberOfTokens = uint8(availableTokens.length);
+        // TODO: distribute only the voted for tokens
         for (uint8 i = 0; i < numberOfTokens; i++) {
             IERC20 token = IERC20(availableTokens[i]);
             token.transfer(user, TRANSFER_TOKEN_AMOUNT);
