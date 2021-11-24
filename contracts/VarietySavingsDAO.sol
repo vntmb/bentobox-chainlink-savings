@@ -30,7 +30,8 @@ contract VarietySavingsDAO {
     }
     mapping(address => bool) addressVotingEligibity;
     // TODO: keep symbol/name of tokens somewhere
-    address[] availableTokens = [
+    mapping(address => bool) tokenAvailableForVoting;
+    address[] public availableTokens = [
         0x4997910AC59004383561Ac7D6d8a65721Fa2A663,
         0xdD5C42F833b81853F2B1e5E8b76B763bff7C1c37,
         0x898Ed56CbF0E4910b04080863c9f31792fc1a33C,
@@ -41,22 +42,39 @@ contract VarietySavingsDAO {
 
     VotingRound public votingRound;
 
-    modifier eligibleToVote() {
+    constructor () {
+        uint8 numberOfAvailableTokens = uint8(availableTokens.length);
+        // to begin with, add some choice tokens to votable pool
+        for (uint8 i = 0; i < numberOfAvailableTokens; i++) {
+            tokenAvailableForVoting[availableTokens[i]] = true;
+        }
+    }
+
+    function isTokenAvailableForVoting(address _token) public view returns(bool) {
+        return tokenAvailableForVoting[_token];
+    }
+
+    modifier walletEligibleToVote() {
         require(addressVotingEligibity[msg.sender], 'You are not eligible to vote');
         _;
     }
 
-    modifier notVotedYet() {
+    modifier walletNotVotedYet() {
         require(!votingRound.userVoted[msg.sender], 'You can only vote once');
         _;
     }
 
-    function voteForTokens(address[] memory _chosenTokens) public eligibleToVote notVotedYet {
+    function voteForTokens(address[] memory _chosenTokens) public walletEligibleToVote walletNotVotedYet {
         uint8 numberOfVotedTokens = uint8(_chosenTokens.length);
         for (uint8 i = 0; i < numberOfVotedTokens; i++) {
             address currentToken = _chosenTokens[i];
-            votingRound.tokenVoteTotal[currentToken] += 1;
+            // only vote for allowed tokens
+            if (tokenAvailableForVoting[currentToken]) {
+                votingRound.tokenVoteTotal[currentToken] += 1;
+            }
         }
+        // register that the user has voted
+        votingRound.userVoted[msg.sender] = true;
     }
 
     // TODO: Only callable internally and triggered by savings contract
@@ -74,16 +92,41 @@ contract VarietySavingsDAO {
         }
     }
 
+    // function newVotingRound() public {
+    //     uint64 numberPriorRoundVoters = uint64(votingRound.votingUsers.length);
+    //     for (uint64 i = 0; i < numberPriorRoundVoters; i++) {
+    //         address user = votingRound.votingUsers[i];
+    //         // distribute rewards
+    //         distributeTokens(user);
+    //         // reset user's vote
+    //         votingRound.tokenVoteTotal[user] = 0;
+    //     }
+    //     // set votings array to zero
+    //     delete votingRound.votingUsers;
+    //     votingRound.roundNumber += 1;
+    // }
+
+    function deleteUsersVotingRoundInfo(address _user) private {
+        votingRound.userVoted[_user] = false;
+    }
+
+    function deleteTokenVotesForRound() private {
+        uint8 numberOfTokens = uint8(availableTokens.length);
+        // TODO: distribute only the voted for tokens
+        for (uint8 i = 0; i < numberOfTokens; i++) {
+            delete votingRound.tokenVoteTotal[availableTokens[i]];
+        }
+    }
+
     function newVotingRound() public {
         uint64 numberPriorRoundVoters = uint64(votingRound.votingUsers.length);
         for (uint64 i = 0; i < numberPriorRoundVoters; i++) {
             address user = votingRound.votingUsers[i];
             // distribute rewards
             distributeTokens(user);
-            // reset user's vote
-            votingRound.tokenVoteTotal[user] = 0;
+            deleteUsersVotingRoundInfo(user);
         }
-        // set votings array to zero
+        deleteTokenVotesForRound();
         delete votingRound.votingUsers;
         votingRound.roundNumber += 1;
     }
@@ -105,4 +148,9 @@ contract VarietySavingsDAO {
     // TODO: change tokens on the next round if necessary
 
     // TODO: this contract should custody variety tokens?
+
+    // TODO: change the tokens available for voting
+
+    // TODO: delete voting round info or append it to a list and start a new round.
+    //       currently, round number increments but rest of the info does not change
 }
