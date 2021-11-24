@@ -23,14 +23,20 @@ contract VarietySavingsDAO {
     struct VotingRound {
         uint32 roundNumber;
         address[] votingUsers;
-        mapping(address => uint32) voteCount;
+        mapping(address => uint32) tokenVoteTotal;
         mapping(address => bool) userVoted;
         // TODO: add start date, end date
         // TODO: bring tokens into the struct?
     }
     mapping(address => bool) addressVotingEligibity;
     // TODO: keep symbol/name of tokens somewhere
-    address[] availableTokens;
+    address[] availableTokens = [
+        0x4997910AC59004383561Ac7D6d8a65721Fa2A663,
+        0xdD5C42F833b81853F2B1e5E8b76B763bff7C1c37,
+        0x898Ed56CbF0E4910b04080863c9f31792fc1a33C,
+        0x224F0deDD8237d3Bf72934217CF6F433a4ed9F2d
+    ];
+    
     uint8 TRANSFER_TOKEN_AMOUNT = 10;
 
     VotingRound public votingRound;
@@ -49,7 +55,7 @@ contract VarietySavingsDAO {
         uint8 numberOfVotedTokens = uint8(_chosenTokens.length);
         for (uint8 i = 0; i < numberOfVotedTokens; i++) {
             address currentToken = _chosenTokens[i];
-            votingRound.voteCount[currentToken] += 1;
+            votingRound.tokenVoteTotal[currentToken] += 1;
         }
     }
 
@@ -75,11 +81,23 @@ contract VarietySavingsDAO {
             // distribute rewards
             distributeTokens(user);
             // reset user's vote
-            votingRound.voteCount[user] = 0;
+            votingRound.tokenVoteTotal[user] = 0;
         }
         // set votings array to zero
         delete votingRound.votingUsers;
         votingRound.roundNumber += 1;
+    }
+    
+    function tokenVotes(address _token) public view returns(uint32) {
+        return votingRound.tokenVoteTotal[_token];
+    }
+    
+    function hasUserVoted(address _user) public view returns(bool) {
+        return votingRound.userVoted[_user];
+    }
+    
+    function isUserEligibleToVote(address _user) public view returns(bool) {
+        return addressVotingEligibity[_user];
     }
 
     // TODO: give users the ability to vote for new tokens on the next round
