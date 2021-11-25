@@ -3,20 +3,34 @@
 pragma solidity >=0.8.0;
 
 interface IERC20 {
-    function totalSupply() external view returns (uint);
-    function balanceOf(address account) external view returns (uint);
-    function transfer(address recipient, uint amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint);
-    function approve(address spender, uint amount) external returns (bool);
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address account) external view returns (uint256);
+
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
+
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
     function transferFrom(
         address sender,
         address recipient,
-        uint amount
+        uint256 amount
     ) external returns (bool);
-    event Transfer(address indexed from, address indexed to, uint value);
-    event Approval(address indexed owner, address indexed spender, uint value);
-}
 
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
+}
 
 // TODO: add emits to the contract
 contract VarietySavingsDAO {
@@ -37,12 +51,17 @@ contract VarietySavingsDAO {
         0x898Ed56CbF0E4910b04080863c9f31792fc1a33C,
         0x224F0deDD8237d3Bf72934217CF6F433a4ed9F2d
     ];
-    
+
     uint8 TRANSFER_TOKEN_AMOUNT = 10;
 
     VotingRound public votingRound;
 
-    constructor () {
+    address public owner;
+
+    address public mainSavingsContract;
+
+    constructor() {
+        owner = msg.sender; /// Added owner to set VarietySavings contract address
         uint8 numberOfAvailableTokens = uint8(availableTokens.length);
         // to begin with, add some choice tokens to votable pool
         for (uint8 i = 0; i < numberOfAvailableTokens; i++) {
@@ -50,21 +69,54 @@ contract VarietySavingsDAO {
         }
     }
 
-    function isTokenAvailableForVoting(address _token) public view returns(bool) {
+    modifier onlyMain(address caller) {
+        require(caller == mainSavingsContract, "Unauthorized");
+        _;
+    }
+
+    modifier onlyOwner(address caller) {
+        require(caller == owner, "Unauthorized");
+        _;
+    }
+
+    function setMainSavingsContract(address contractAddress)
+        public
+        onlyOwner(msg.sender)
+    {
+        mainSavingsContract = contractAddress;
+    }
+
+    function addEligibleVoter(address user) external onlyMain(msg.sender) {
+        // TODO: check if user is already eligible, if yes, ignore
+        setAddressEligibility(user, true);
+    }
+
+    function isTokenAvailableForVoting(address _token)
+        public
+        view
+        returns (bool)
+    {
         return tokenAvailableForVoting[_token];
     }
 
     modifier walletEligibleToVote() {
-        require(addressVotingEligibity[msg.sender], 'You are not eligible to vote');
+        require(
+            addressVotingEligibity[msg.sender],
+            "You are not eligible to vote"
+        );
         _;
     }
 
     modifier walletNotVotedYet() {
-        require(!votingRound.userVoted[msg.sender], 'You can only vote once');
+        require(!votingRound.userVoted[msg.sender], "You can only vote once");
         _;
     }
 
-    function voteForTokens(address[] memory _chosenTokens) public walletEligibleToVote walletNotVotedYet {
+    function voteForTokens(address[] memory _chosenTokens)
+        public
+        walletEligibleToVote
+        walletNotVotedYet
+    {
         uint8 numberOfVotedTokens = uint8(_chosenTokens.length);
         for (uint8 i = 0; i < numberOfVotedTokens; i++) {
             address currentToken = _chosenTokens[i];
@@ -78,7 +130,7 @@ contract VarietySavingsDAO {
     }
 
     // TODO: Only callable internally and triggered by savings contract
-    function setAddressEligibility(address user, bool eligibility) public {
+    function setAddressEligibility(address user, bool eligibility) private {
         addressVotingEligibity[user] = eligibility;
     }
 
@@ -130,16 +182,16 @@ contract VarietySavingsDAO {
         delete votingRound.votingUsers;
         votingRound.roundNumber += 1;
     }
-    
-    function tokenVotes(address _token) public view returns(uint32) {
+
+    function tokenVotes(address _token) public view returns (uint32) {
         return votingRound.tokenVoteTotal[_token];
     }
-    
-    function hasUserVoted(address _user) public view returns(bool) {
+
+    function hasUserVoted(address _user) public view returns (bool) {
         return votingRound.userVoted[_user];
     }
-    
-    function isUserEligibleToVote(address _user) public view returns(bool) {
+
+    function isUserEligibleToVote(address _user) public view returns (bool) {
         return addressVotingEligibity[_user];
     }
 

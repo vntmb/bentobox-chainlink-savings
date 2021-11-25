@@ -170,6 +170,10 @@ interface IBentoBoxMinimal {
     ) external;
 }
 
+interface IVarietySavingsDAO {
+    function addEligibleVoter(address user) external;
+}
+
 contract VarietySavings is BoringBatchable {
     struct Deposits {
         address user;
@@ -186,10 +190,33 @@ contract VarietySavings is BoringBatchable {
 
     mapping(uint256 => Deposits) public deposits;
 
+    mapping(address => uint256) private userBalances;
+
+    address public savingsDaoContract;
+
+    event NewDeposit(address indexed user, uint256 value, string message);
+
     constructor(IBentoBoxMinimal _bentoBox) {
         owner = msg.sender;
         bentoBox = _bentoBox;
         _bentoBox.registerProtocol();
+    }
+
+    modifier onlyOwner(address caller) {
+        require(caller == owner, "Unauthorized");
+        _;
+    }
+
+    function setSavingsDaoContract(address contractAddress)
+        public
+        onlyOwner(msg.sender)
+    {
+        savingsDaoContract = contractAddress;
+    }
+
+    function getBalace(address user) public view returns (uint256) {
+        uint256 balance = userBalances[user];
+        return balance;
     }
 
     // TODO: add vrs back in
@@ -228,6 +255,9 @@ contract VarietySavings is BoringBatchable {
         });
 
         totalDeposits += 1;
+        userBalances[msg.sender] += amount;
+        IVarietySavingsDAO(savingsDaoContract).addEligibleVoter(msg.sender);
+        emit NewDeposit(msg.sender, amount, "Successful Deposit");
     }
 
     function withdrawFromVarietySavings(
