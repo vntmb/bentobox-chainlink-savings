@@ -34,14 +34,11 @@ interface IERC20 {
 
 // TODO: add emits to the contract
 contract VarietySavingsDAO {
-    struct VotingRound {
-        uint32 roundNumber;
-        address[] votingUsers;
-        mapping(address => uint32) tokenVoteTotal;
-        mapping(address => bool) userVoted;
-        // TODO: add start date, end date
-        // TODO: bring tokens into the struct?
-    }
+    uint32 public roundNumber;
+    address[] private usersWhoVoted;
+    mapping(address => uint32) private tokenVoteTotal;
+    mapping(address => bool) private hasUserVoted;
+    // TODO: add start date, end date
     mapping(address => bool) addressVotingEligibity;
     // TODO: keep symbol/name of tokens somewhere
     mapping(address => bool) tokenAvailableForVoting;
@@ -53,8 +50,6 @@ contract VarietySavingsDAO {
     ];
 
     uint8 TRANSFER_TOKEN_AMOUNT = 10;
-
-    VotingRound public votingRound;
 
     address public owner;
 
@@ -87,9 +82,10 @@ contract VarietySavingsDAO {
     }
 
     // TODO: add functionality to remove voter eligibility
+    // TODO: we don't need this function, we can add onlyMain to setWalletVotingEligibility directly and call that
     function addEligibleVoter(address user) external onlyMain(msg.sender) {
         // TODO: check if user is already eligible, if yes, ignore
-        setAddressEligibility(user, true);
+        setWalletVotingEligibility(user, true);
     }
 
     function isTokenAvailableForVoting(address _token)
@@ -109,7 +105,7 @@ contract VarietySavingsDAO {
     }
 
     modifier walletNotVotedYet() {
-        require(!votingRound.userVoted[msg.sender], "You can only vote once");
+        require(!hasUserVoted[msg.sender], "You can only vote once");
         _;
     }
 
@@ -123,15 +119,15 @@ contract VarietySavingsDAO {
             address currentToken = _chosenTokens[i];
             // only vote for allowed tokens
             if (tokenAvailableForVoting[currentToken]) {
-                votingRound.tokenVoteTotal[currentToken] += 1;
+                tokenVoteTotal[currentToken] += 1;
             }
         }
         // register that the user has voted
-        votingRound.userVoted[msg.sender] = true;
+        hasUserVoted[msg.sender] = true;
     }
 
     // TODO: Only callable internally and triggered by savings contract
-    function setAddressEligibility(address user, bool eligibility) private {
+    function setWalletVotingEligibility(address user, bool eligibility) private {
         addressVotingEligibity[user] = eligibility;
     }
 
@@ -145,51 +141,40 @@ contract VarietySavingsDAO {
         }
     }
 
-    // function newVotingRound() public {
-    //     uint64 numberPriorRoundVoters = uint64(votingRound.votingUsers.length);
-    //     for (uint64 i = 0; i < numberPriorRoundVoters; i++) {
-    //         address user = votingRound.votingUsers[i];
-    //         // distribute rewards
-    //         distributeTokens(user);
-    //         // reset user's vote
-    //         votingRound.tokenVoteTotal[user] = 0;
-    //     }
-    //     // set votings array to zero
-    //     delete votingRound.votingUsers;
-    //     votingRound.roundNumber += 1;
-    // }
-
     function deleteUsersVotingRoundInfo(address _user) private {
-        votingRound.userVoted[_user] = false;
+        hasUserVoted[_user] = false;
     }
 
     function deleteTokenVotesForRound() private {
         uint8 numberOfTokens = uint8(availableTokens.length);
         // TODO: distribute only the voted for tokens
+        // TODO: use chainlink vrf
         for (uint8 i = 0; i < numberOfTokens; i++) {
-            delete votingRound.tokenVoteTotal[availableTokens[i]];
+            tokenVoteTotal[availableTokens[i]] = 0;
         }
     }
 
+    // TODO: add constraints to who can trigger this function
     function newVotingRound() public {
-        uint64 numberPriorRoundVoters = uint64(votingRound.votingUsers.length);
+        uint64 numberPriorRoundVoters = uint64(usersWhoVoted.length);
         for (uint64 i = 0; i < numberPriorRoundVoters; i++) {
-            address user = votingRound.votingUsers[i];
+            address user = usersWhoVoted[i];
             // distribute rewards
             distributeTokens(user);
+            // TODO: delete only if token distribution is successful
             deleteUsersVotingRoundInfo(user);
         }
         deleteTokenVotesForRound();
-        delete votingRound.votingUsers;
-        votingRound.roundNumber += 1;
+        delete usersWhoVoted;
+        roundNumber += 1;
     }
 
     function tokenVotes(address _token) public view returns (uint32) {
-        return votingRound.tokenVoteTotal[_token];
+        return tokenVoteTotal[_token];
     }
 
-    function hasUserVoted(address _user) public view returns (bool) {
-        return votingRound.userVoted[_user];
+    function getUserVotedStatus(address _user) public view returns (bool) {
+        return hasUserVoted[_user];
     }
 
     function isUserEligibleToVote(address _user) public view returns (bool) {
@@ -203,7 +188,4 @@ contract VarietySavingsDAO {
     // TODO: this contract should custody variety tokens?
 
     // TODO: change the tokens available for voting
-
-    // TODO: delete voting round info or append it to a list and start a new round.
-    //       currently, round number increments but rest of the info does not change
 }
