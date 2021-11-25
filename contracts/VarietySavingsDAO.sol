@@ -86,6 +86,7 @@ contract VarietySavingsDAO {
         mainSavingsContract = contractAddress;
     }
 
+    // TODO: add functionality to remove voter eligibility
     function addEligibleVoter(address user) external onlyMain(msg.sender) {
         // TODO: check if user is already eligible, if yes, ignore
         setAddressEligibility(user, true);

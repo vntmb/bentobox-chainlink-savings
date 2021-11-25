@@ -291,5 +291,6 @@ contract VarietySavings is BoringBatchable {
                 sharesWithdrawn
             );
         }
+        // TODO: Remove user from voting eligibility if balance is 0
     }
 }
