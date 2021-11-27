@@ -47,8 +47,6 @@ contract VarietySavingsDAO is VRFConsumerBase {
 
     // ------------------- Token Info --------------------
     address[] public availableTokens = [
-        0x326C977E6efc84E512bB9C30f76E30c160eD06FB,
-        // Link token
         0x4997910AC59004383561Ac7D6d8a65721Fa2A663,
         0xdD5C42F833b81853F2B1e5E8b76B763bff7C1c37,
         0x898Ed56CbF0E4910b04080863c9f31792fc1a33C,
@@ -70,6 +68,7 @@ contract VarietySavingsDAO is VRFConsumerBase {
     bytes32 internal keyHash;
     uint256 internal fee;
     // ~~~ randomness
+    uint8 public chanceOfWinning = 10;
     uint256 public randomResult;
     uint256 MAX_INT = 2**256 - 1;
     uint256 public cutoffInt;
@@ -98,14 +97,12 @@ contract VarietySavingsDAO is VRFConsumerBase {
         keyHash = 0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4;
         fee = 0.0001 * 10**18; // 0.0001 LINK (Varies by network)
         owner = msg.sender;
-        randomResult = 10;
-        cutoffInt = (MAX_INT / 100) * randomResult;
+        cutoffInt = (MAX_INT / 100) * chanceOfWinning;
     }
 
     /**
      * Requests randomness
      */
-    // use Getting a random number within a range + Getting multiple random numbers
     function getRandomNumber() public returns (bytes32 requestId) {
         require(
             LINK.balanceOf(address(this)) >= fee,
@@ -121,8 +118,7 @@ contract VarietySavingsDAO is VRFConsumerBase {
         internal
         override
     {
-        randomResult = (randomness % 99) + 1;
-        cutoffInt = (MAX_INT / 100) * randomResult;
+        randomResult = randomness;
     }
 
     /**
@@ -140,11 +136,21 @@ contract VarietySavingsDAO is VRFConsumerBase {
         return expandedValues;
     }
 
+    function changeChanceOfWinning(uint8 _newChance) public {
+        chanceOfWinning = _newChance;
+        cutoffInt = (MAX_INT / 100) * _newChance;
+    }
+
     // Implement a withdraw function to avoid locking your LINK in the contract
     // TODO: add security
     function withdrawLink() external {
         // TODO: send all ERC20 tokens back
         LINK.transfer(owner, LINK.balanceOf(address(this)));
+        uint8 numberOfTokens = uint8(availableTokens.length);
+        for (uint8 i = 1; i < numberOfTokens; i++) {
+            IERC20 token = IERC20(availableTokens[i]);
+            token.transfer(owner, token.balanceOf(address(this)));
+        }
     }
 
     modifier onlyMain(address caller) {
