@@ -74,19 +74,6 @@ contract VarietySavingsDAO is VRFConsumerBase {
     uint256 MAX_INT = 2**256 - 1;
     uint256 public cutoffInt;
 
-    // function setNewWinningChance(uint8 _newWinningChance) public {
-    //     require(
-    //         _newWinningChance > 0 && _newWinningChance <= 100,
-    //         "Chance of winning must be in (0, 100)"
-    //     );
-    //     require(
-    //         msg.sender == owner || msg.sender == address(this),
-    //         "Not Authorized"
-    //     );
-    //     percentChanceOfWinning = _newWinningChance;
-    //     cutoffInt = (MAX_INT / 100) * _newWinningChance;
-    // }
-
     /**
      * Constructor inherits VRFConsumerBase
      *
