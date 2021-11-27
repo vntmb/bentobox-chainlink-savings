@@ -73,6 +73,7 @@ contract VarietySavingsDAO is VRFConsumerBase {
     uint256 MAX_INT = 2**256 - 1;
     uint256 public cutoffInt;
 
+    // -------------------- Constructor ---------------------
     /**
      * Constructor inherits VRFConsumerBase
      *
@@ -100,6 +101,7 @@ contract VarietySavingsDAO is VRFConsumerBase {
         cutoffInt = (MAX_INT / 100) * chanceOfWinning;
     }
 
+    // -------------------- Randomness Functions ---------------------
     /**
      * Requests randomness
      */
@@ -141,18 +143,21 @@ contract VarietySavingsDAO is VRFConsumerBase {
         cutoffInt = (MAX_INT / 100) * _newChance;
     }
 
-    // Implement a withdraw function to avoid locking your LINK in the contract
-    // TODO: add security
-    function withdrawLink() external {
-        LINK.transfer(owner, LINK.balanceOf(address(this)));
-        uint8 numberOfTokens = uint8(availableTokens.length);
-        // send all ERC20 tokens back
-        for (uint8 i = 1; i < numberOfTokens; i++) {
-            IERC20 token = IERC20(availableTokens[i]);
-            token.transfer(owner, token.balanceOf(address(this)));
-        }
+    // -------------------- Set State Functions ---------------------
+    function setMainSavingsContract(address contractAddress)
+        public
+        onlyOwner(msg.sender)
+    {
+        mainSavingsContract = contractAddress;
     }
 
+    // TODO: Only callable by savings contract
+    //    -> function setWalletVotingEligibility(address user, bool eligibility) external onlyMain(msg.sender) {
+    function setWalletVotingEligibility(address user, bool eligibility) public {
+        addressVotingEligibity[user] = eligibility;
+    }
+
+    // -------------------- Modifiers ---------------------
     modifier onlyMain(address caller) {
         require(caller == mainSavingsContract, "Unauthorized");
         _;
@@ -161,21 +166,6 @@ contract VarietySavingsDAO is VRFConsumerBase {
     modifier onlyOwner(address caller) {
         require(caller == owner, "Unauthorized");
         _;
-    }
-
-    function setMainSavingsContract(address contractAddress)
-        public
-        onlyOwner(msg.sender)
-    {
-        mainSavingsContract = contractAddress;
-    }
-
-    function isTokenAvailableForVoting(address _token)
-        public
-        view
-        returns (bool)
-    {
-        return tokenAvailableForVoting[_token];
     }
 
     modifier walletEligibleToVote() {
@@ -191,6 +181,28 @@ contract VarietySavingsDAO is VRFConsumerBase {
         _;
     }
 
+    // -------------------- Contract State Visibility ---------------------
+    function isTokenAvailableForVoting(address _token)
+        public
+        view
+        returns (bool)
+    {
+        return tokenAvailableForVoting[_token];
+    }
+
+    function tokenVotes(address _token) public view returns (uint32) {
+        return tokenVoteTotal[_token];
+    }
+
+    function getUserVotedStatus(address _user) public view returns (bool) {
+        return hasUserVoted[_user];
+    }
+
+    function isUserEligibleToVote(address _user) public view returns (bool) {
+        return addressVotingEligibity[_user];
+    }
+
+    // -------------------- Voting Functions ---------------------
     function voteForTokens(address[] memory _chosenTokens)
         public
         walletEligibleToVote
@@ -208,12 +220,19 @@ contract VarietySavingsDAO is VRFConsumerBase {
         hasUserVoted[msg.sender] = true;
     }
 
-    // TODO: Only callable by savings contract
-    //    -> function setWalletVotingEligibility(address user, bool eligibility) external onlyMain(msg.sender) {
-    function setWalletVotingEligibility(address user, bool eligibility) public {
-        addressVotingEligibity[user] = eligibility;
+    // -------------------- End Round Functions ---------------------
+    // ~~~ Delete Round Data
+    function deleteUsersVotingRoundInfo(address _user) private {
+        hasUserVoted[_user] = false;
     }
 
+    function deleteTokenVotesForRound() private {
+        uint8 numberOfTokens = uint8(availableTokens.length);
+        for (uint8 i = 0; i < numberOfTokens; i++) {
+            tokenVoteTotal[availableTokens[i]] = 0;
+        }
+    }
+    // ~~~ win selections
     // TODO: change this to private
     function selectWinningToken() public {
         uint8 numberOfTokens = uint8(availableTokens.length);
@@ -238,18 +257,7 @@ contract VarietySavingsDAO is VRFConsumerBase {
             token.transfer(_user, TRANSFER_TOKEN_AMOUNT);
         }
     }
-
-    function deleteUsersVotingRoundInfo(address _user) private {
-        hasUserVoted[_user] = false;
-    }
-
-    function deleteTokenVotesForRound() private {
-        uint8 numberOfTokens = uint8(availableTokens.length);
-        for (uint8 i = 0; i < numberOfTokens; i++) {
-            tokenVoteTotal[availableTokens[i]] = 0;
-        }
-    }
-
+    // ~~~ control end round execution
     // TODO: add constraints to who can trigger this function
     function newVotingRound() public {
         uint64 numberPriorRoundVoters = uint64(usersWhoVoted.length);
@@ -273,25 +281,25 @@ contract VarietySavingsDAO is VRFConsumerBase {
         roundNumber += 1;
     }
 
-    function tokenVotes(address _token) public view returns (uint32) {
-        return tokenVoteTotal[_token];
+    // -------------------- Auxiliary Functions ---------------------
+    // Implement a withdraw function to avoid locking your LINK in the contract
+    // TODO: add security
+    function withdrawLink() external {
+        LINK.transfer(owner, LINK.balanceOf(address(this)));
+        uint8 numberOfTokens = uint8(availableTokens.length);
+        // send all ERC20 tokens back
+        for (uint8 i = 1; i < numberOfTokens; i++) {
+            IERC20 token = IERC20(availableTokens[i]);
+            token.transfer(owner, token.balanceOf(address(this)));
+        }
     }
 
-    function getUserVotedStatus(address _user) public view returns (bool) {
-        return hasUserVoted[_user];
-    }
-
-    function isUserEligibleToVote(address _user) public view returns (bool) {
-        return addressVotingEligibity[_user];
-    }
-
-    // TODO: give users the ability to vote for new tokens on the next round
-
-    // TODO: change tokens on the next round if necessary
+    // -------------------- Remaining TODOs ---------------------
+    // TODO: change options from one round to the next as per user wants
+    //    -> give users the ability to vote for new tokens on the next round
+    //    -> change tokens on the next round if necessary
 
     // TODO: this contract should custody variety tokens?
-
-    // TODO: change the tokens available for voting
 
     // TODO: tidy and refactor contract
 }
