@@ -144,9 +144,9 @@ contract VarietySavingsDAO is VRFConsumerBase {
     // Implement a withdraw function to avoid locking your LINK in the contract
     // TODO: add security
     function withdrawLink() external {
-        // TODO: send all ERC20 tokens back
         LINK.transfer(owner, LINK.balanceOf(address(this)));
         uint8 numberOfTokens = uint8(availableTokens.length);
+        // send all ERC20 tokens back
         for (uint8 i = 1; i < numberOfTokens; i++) {
             IERC20 token = IERC20(availableTokens[i]);
             token.transfer(owner, token.balanceOf(address(this)));
@@ -169,13 +169,6 @@ contract VarietySavingsDAO is VRFConsumerBase {
     {
         mainSavingsContract = contractAddress;
     }
-
-    // // TODO: add functionality to remove voter eligibility
-    // // TODO: we don't need this function, we can add onlyMain to setWalletVotingEligibility directly and call that
-    // function addEligibleVoter(address user) external onlyMain(msg.sender) {
-    //     // TODO: check if user is already eligible, if yes, ignore
-    //     setWalletVotingEligibility(user, true);
-    // }
 
     function isTokenAvailableForVoting(address _token)
         public
@@ -216,9 +209,8 @@ contract VarietySavingsDAO is VRFConsumerBase {
     }
 
     // TODO: Only callable by savings contract
-    function setWalletVotingEligibility(address user, bool eligibility)
-        public
-    {
+    //    -> function setWalletVotingEligibility(address user, bool eligibility) external onlyMain(msg.sender) {
+    function setWalletVotingEligibility(address user, bool eligibility) public {
         addressVotingEligibity[user] = eligibility;
     }
 
@@ -228,7 +220,6 @@ contract VarietySavingsDAO is VRFConsumerBase {
         address _tempToken = availableTokens[0];
         uint32 _tempTokenVote = tokenVoteTotal[_tempToken];
         // TODO: deal with ties
-        // TODO: make sure none of the tokens have 0 votes
         for (uint8 i = 1; i < numberOfTokens; i++) {
             if (tokenVoteTotal[availableTokens[i]] > _tempTokenVote) {
                 _tempToken = availableTokens[i];
@@ -236,6 +227,7 @@ contract VarietySavingsDAO is VRFConsumerBase {
             }
         }
         lastRoundWinningToken = _tempToken;
+        require(tokenVoteTotal[lastRoundWinningToken] != 0, "No votes registered");
     }
 
     // TODO: use safe transfer
@@ -263,7 +255,9 @@ contract VarietySavingsDAO is VRFConsumerBase {
         uint64 numberPriorRoundVoters = uint64(usersWhoVoted.length);
         // get chances of winning from vrf
         getRandomNumber();
-        uint256[] memory userWinningChances = new uint256[](numberPriorRoundVoters);
+        uint256[] memory userWinningChances = new uint256[](
+            numberPriorRoundVoters
+        );
         userWinningChances = expand(randomResult, numberPriorRoundVoters);
         for (uint64 i = 0; i < numberPriorRoundVoters; i++) {
             address user = usersWhoVoted[i];
@@ -273,6 +267,7 @@ contract VarietySavingsDAO is VRFConsumerBase {
             // TODO: delete only if token distribution is successful
             deleteUsersVotingRoundInfo(user);
         }
+        // TODO: delete only if token distribution is successful
         deleteTokenVotesForRound();
         delete usersWhoVoted;
         roundNumber += 1;
