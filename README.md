@@ -14,7 +14,7 @@ Depositing Money to HelloBentoBox from token:
     - on BentoBoxV1 contract: whitelistMasterContract(VarietySavings.address, true)
   1. on ALPHA Token contract: approve(bento.address, max transferable amount per transaction)
   2. on BentoBoxV1 contract: setMasterContractApproval(yourwallet.address, VarietySavings.address, true)
-  3. on HelloBentoBox contract: depositToHelloBentoBox(alphaToken.address, amount, false)
+  3. on HelloBentoBox contract: depositToVarietySavings(alphaToken.address, amount, false)
 
 Withdrawing Money to HelloBentoBox from token:
   - on HelloBentoBox contract: withdrawFromVarietySavings(depositId, amount, true/false <transfering from your account to bentobox?>)
