@@ -9,13 +9,13 @@ Deployed at (polygon mumbai):
 - VarietySavingsDAO: 0xA40FC81BAB78d5E4A9e27Cc6f91d11638CF4fCa0
 
 
-Depositing Money to HelloBentoBox from token:
+Depositing Money to VarietySavings from token:
   - when setting up contracts:
     - on BentoBoxV1 contract: whitelistMasterContract(VarietySavings.address, true)
   1. on ALPHA Token contract: approve(bento.address, max transferable amount per transaction)
   2. on BentoBoxV1 contract: setMasterContractApproval(yourwallet.address, VarietySavings.address, true)
-  3. on HelloBentoBox contract: depositToVarietySavings(alphaToken.address, amount, false)
+  3. on VarietySavings contract: depositToVarietySavings(alphaToken.address, amount, false)
 
-Withdrawing Money to HelloBentoBox from token:
-  - on HelloBentoBox contract: withdrawFromVarietySavings(depositId, amount, true/false <transfering from your account to bentobox?>)
+Withdrawing Money to VarietySavings from token:
+  - on VarietySavings contract: withdrawFromVarietySavings(depositId, amount, true/false <transfering from your account to bentobox?>)
     - caveat: you can do withdrawals only by depositId. i.e. if you deposit 1000 (id = 0) and then 750 (id = 1), you can withdraw up to 1000 on id = 0 and up to 750 on id = 1, but not up to 1750 at once
